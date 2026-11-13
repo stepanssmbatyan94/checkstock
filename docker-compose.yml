@@ -1,0 +1,49 @@
+# Весь прототип одной командой: docker compose up --build
+# Порты можно переопределить, если они заняты: WEB_PORT=9090 docker compose up
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: checkstock
+      POSTGRES_USER: checkstock
+      POSTGRES_PASSWORD: checkstock
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U checkstock -d checkstock"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://checkstock:checkstock@db:5432/checkstock
+    # При каждом старте: миграции → тестовые данные (повторно не дублируются) → сервер.
+    command: >
+      sh -c "alembic upgrade head
+      && python -m app.seed
+      && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  web:
+    build: ./frontend
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  db-data:

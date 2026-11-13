@@ -1,0 +1,37 @@
+[project]
+name = "checkstock"
+version = "0.1.0"
+requires-python = ">=3.13"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+# Один event loop на весь прогон: движок БД создаётся один раз.
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+# Тесты названы как сценарии: класс When…, метод it_…
+python_classes = ["When*"]
+python_functions = ["it_*"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+# Границы слоёв. Проверка: make check-arch
+[tool.importlinter]
+root_package = "app"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Слои: api → infrastructure → application → domain"
+type = "layers"
+layers = ["app.api", "app.infrastructure", "app.application", "app.domain"]
+
+[[tool.importlinter.contracts]]
+name = "Домен и приложение не знают о фреймворках и базе"
+type = "forbidden"
+source_modules = ["app.domain", "app.application"]
+forbidden_modules = ["sqlalchemy", "asyncpg", "fastapi", "starlette", "pydantic", "alembic"]
