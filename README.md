@@ -9,7 +9,7 @@
 
 | Часть | Технологии | Как устроено |
 |---|---|---|
-| Бэкенд | **Python 3.13, FastAPI**, SQLAlchemy Core + asyncpg, Alembic | гексагональная архитектура (Hexagonal Architecture, Ports & Adapters): `domain → application → infrastructure → api`, зависимости направлены внутрь |
+| Бэкенд | **Python 3.13, FastAPI**, SQLAlchemy Core + asyncpg, Alembic | гексагональная архитектура (Hexagonal Architecture, Ports & Adapters): слои `api → infrastructure → application → domain`, импорты идут только внутрь, к домену |
 | База | **PostgreSQL 17** | журнал движений с двойной записью (double-entry ledger) + таблица остатков (projection), CHECK-ограничения, блокировки строк (`SELECT … FOR UPDATE`) |
 | Интерфейс | React 19, TypeScript, Vite, Tailwind CSS, TanStack Query | слоистая архитектура (layered, в духе Feature-Sliced Design): `app → pages → features → shared`; серверное состояние (server state) — в TanStack Query |
 | Проверки | pytest, ruff, import-linter | тесты на настоящей PostgreSQL, границы слоёв проверяются автоматически |
