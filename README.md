@@ -24,8 +24,33 @@ docker compose up --build
 обычной операцией прихода и виден в истории). Повторный запуск данные не
 дублирует.
 
-Если порты заняты: `WEB_PORT=9090 API_PORT=9000 docker compose up --build`.
 Начать с чистой базы: `make reset`.
+
+### Настройки: база и порты
+
+Файл `.env` для запуска не нужен — всё работает со значениями по умолчанию.
+Они описаны в [`.env.example`](.env.example); чтобы изменить порт или
+учётные данные, скопируйте его в `.env` и поправьте.
+
+| Сервис | Что это | Адрес на вашей машине | Переменная |
+|---|---|---|---|
+| `web` | интерфейс (nginx раздаёт React и проксирует `/api`) | <http://localhost:8080> | `WEB_PORT` |
+| `api` | FastAPI, Swagger на `/docs`, проверка `/health` | <http://localhost:8000> | `API_PORT` |
+| `db` | PostgreSQL 17 | `localhost:5433` | `DB_PORT` |
+
+База: `checkstock`, пользователь `checkstock`, пароль `checkstock`
+(`POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`). Данные лежат в томе
+Docker `db-data` и переживают перезапуск; `make reset` их стирает.
+
+Порт базы снаружи — 5433, а не обычный 5432, чтобы не столкнуться с
+PostgreSQL, уже установленной на машине. Подключиться и посмотреть таблицы:
+
+```bash
+docker compose exec db psql -U checkstock checkstock
+```
+
+Если порт занят, достаточно одной переменной:
+`API_PORT=9000 docker compose up --build`.
 
 ## Проверки
 
@@ -248,13 +273,16 @@ backend/app/
 
 ## Локальная разработка без Docker
 
-Нужны Python 3.13, Node 22 и PostgreSQL.
+Нужны Python 3.13, Node 22 и PostgreSQL. Базу проще взять из Compose
+(`docker compose up -d db`) — под неё и написан `backend/.env.example`.
+Интерфейс в режиме разработки шлёт `/api` на `http://localhost:8000`;
+другой адрес задаётся переменной `API_TARGET`.
 
 ```bash
 # бэкенд
 cd backend
 python3.13 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
-echo "DATABASE_URL=postgresql+asyncpg://USER:PASSWORD@localhost:5432/checkstock" > .env
+cp .env.example .env            # строка подключения; описание — внутри файла
 .venv/bin/alembic upgrade head && .venv/bin/python -m app.seed
 .venv/bin/uvicorn app.main:app --reload
 
