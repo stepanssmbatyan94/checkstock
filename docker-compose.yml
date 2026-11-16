@@ -27,8 +27,8 @@ services:
       sh -c "alembic upgrade head
       && python -m app.seed
       && uvicorn app.main:app --host 0.0.0.0 --port 8000"
-    ports:
-      - "${API_PORT:-8000}:8000"
+    # Наружу порт не публикуется: API и его документация доступны через web
+    # (http://localhost:8080/api/…), поэтому занятый порт 8000 запуску не мешает.
     depends_on:
       db:
         condition: service_healthy

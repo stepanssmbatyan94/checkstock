@@ -32,7 +32,15 @@ def create_app() -> FastAPI:
         yield
         await engine.dispose()
 
-    app = FastAPI(title="CheckStock", lifespan=lifespan)
+    # Документация живёт под /api, чтобы открываться с того же адреса, что и
+    # интерфейс: nginx и dev-сервер Vite проксируют /api целиком.
+    app = FastAPI(
+        title="CheckStock",
+        lifespan=lifespan,
+        docs_url="/api/docs",
+        redoc_url=None,
+        openapi_url="/api/openapi.json",
+    )
     register_error_handlers(app)
     app.include_router(router)
 

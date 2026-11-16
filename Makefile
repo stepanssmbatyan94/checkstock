@@ -1,7 +1,6 @@
 # Настройки из .env, если он есть; образец и описание — в .env.example.
 -include .env
 WEB_PORT ?= 8080
-API_PORT ?= 8000
 DB_PORT  ?= 5433
 
 COMPOSE := docker compose
@@ -22,7 +21,7 @@ help:
 up:
 	$(COMPOSE) up --build -d
 	@echo "Интерфейс:  http://localhost:$(WEB_PORT)"
-	@echo "API docs:   http://localhost:$(API_PORT)/docs"
+	@echo "API docs:   http://localhost:$(WEB_PORT)/api/docs"
 	@echo "PostgreSQL: localhost:$(DB_PORT)"
 
 down:

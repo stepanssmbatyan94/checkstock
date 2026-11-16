@@ -17,7 +17,7 @@ docker compose up --build
 ```
 
 - Интерфейс: <http://localhost:8080>
-- Документация API: <http://localhost:8000/docs>
+- Документация API (Swagger): <http://localhost:8080/api/docs>
 
 При старте применяются миграции и загружаются тестовые данные из задания:
 один магазин, ФФ «Север» и «Юг», три товара и тестовый приход (он проведён
@@ -32,10 +32,14 @@ docker compose up --build
 Они описаны в [`.env.example`](.env.example); чтобы изменить порт или
 учётные данные, скопируйте его в `.env` и поправьте.
 
+Проект — три отдельных контейнера (`docker compose ps` покажет все три):
+интерфейс, бэкенд и база. Бэкенд — самостоятельный сервис FastAPI; nginx
+в контейнере `web` только пересылает ему запросы `/api`.
+
 | Сервис | Что это | Адрес на вашей машине | Переменная |
 |---|---|---|---|
 | `web` | интерфейс (nginx раздаёт React и проксирует `/api`) | <http://localhost:8080> | `WEB_PORT` |
-| `api` | FastAPI, Swagger на `/docs`, проверка `/health` | <http://localhost:8000> | `API_PORT` |
+| `api` | FastAPI; Swagger на `/api/docs` | через `web`: <http://localhost:8080/api/> | — |
 | `db` | PostgreSQL 17 | `localhost:5433` | `DB_PORT` |
 
 База: `checkstock`, пользователь `checkstock`, пароль `checkstock`
@@ -49,8 +53,10 @@ PostgreSQL, уже установленной на машине. Подключ�
 docker compose exec db psql -U checkstock checkstock
 ```
 
-Если порт занят, достаточно одной переменной:
-`API_PORT=9000 docker compose up --build`.
+У API своего порта наружу нет: и интерфейс, и API, и Swagger открываются с
+одного адреса, так что запуску могут помешать только два порта — 8080 и
+5433. Если один из них занят, достаточно переменной:
+`WEB_PORT=9090 docker compose up --build`.
 
 ## Проверки
 
@@ -59,6 +65,9 @@ make test        # 69 тестов: правила домена + сквозны
 make check-arch  # границы слоёв (import-linter)
 make lint        # ruff
 ```
+
+Без `make` то же самое: `docker compose run --rm api pytest` (и `ruff check .`,
+`lint-imports` вместо `pytest`).
 
 Сквозные тесты идут через HTTP на **настоящей PostgreSQL**, без подмены
 базы: блокировки строк, CHECK-ограничения и транзакции — часть проверяемого
